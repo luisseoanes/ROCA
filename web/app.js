@@ -1,11 +1,11 @@
-/* Cohnetic — visor 3D e informe de la prueba (PoC).
- * Datos: window.COHNETIC_REPORT (report.js) y window.COHNETIC_MOTION (motion.js),
+/* ROCA — visor 3D e informe de la prueba (PoC).
+ * Datos: window.ROCA_REPORT (report.js) y window.ROCA_MOTION (motion.js),
  * generados por scripts/run_poc.py.
  */
 (function () {
   "use strict";
-  const R = window.COHNETIC_REPORT;
-  const M = window.COHNETIC_MOTION;
+  const R = window.ROCA_REPORT;
+  const M = window.ROCA_MOTION;
   if (!R || !M) {
     document.body.innerHTML = '<p style="padding:24px">Faltan los datos. Ejecuta <code>python scripts/run_poc.py</code> para generar web/data/.</p>';
     return;

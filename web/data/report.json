@@ -5,7 +5,7 @@
   "rider": "Binomio de demostración",
   "horse": "Caballo sintético (PoC)",
   "synthetic": true,
-  "generated": "2026-11-05 11:41",
+  "generated": "2026-11-05 12:18",
   "fps": 50.0,
   "duration_s": 255.8,
   "n_cams": 6,

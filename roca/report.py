@@ -1,6 +1,6 @@
 """Exporta el resultado del pipeline a ficheros JS que consume la web (web/).
 
-Se usan .js (window.COHNETIC_*) en lugar de .json para que index.html funcione
+Se usan .js (window.ROCA_*) en lugar de .json para que index.html funcione
 abriéndolo directamente desde el disco, sin servidor.
 """
 from __future__ import annotations
@@ -143,7 +143,7 @@ def write_web_data(out: dict, web_dir: str | Path, meta: dict | None = None) -> 
     mot = build_motion(out)
     p1 = d / "report.js"
     p2 = d / "motion.js"
-    p1.write_text("window.COHNETIC_REPORT = " + json.dumps(rep, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
-    p2.write_text("window.COHNETIC_MOTION = " + json.dumps(mot, separators=(",", ":")) + ";\n", encoding="utf-8")
+    p1.write_text("window.ROCA_REPORT = " + json.dumps(rep, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
+    p2.write_text("window.ROCA_MOTION = " + json.dumps(mot, separators=(",", ":")) + ";\n", encoding="utf-8")
     (d / "report.json").write_text(json.dumps(rep, ensure_ascii=False, indent=1), encoding="utf-8")
     return p1, p2

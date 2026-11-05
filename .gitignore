@@ -7,3 +7,6 @@ venv/
 # Documentación de terceros (reglamentos, manuales y artículos con derechos de autor):
 # se mantienen en local y no se publican. Ver la sección "Documentación de referencia" del README.
 /*.pdf
+
+# Archivo único generado para enviar (python scripts/build_standalone.py)
+dist/

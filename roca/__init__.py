@@ -1,4 +1,4 @@
-"""Cohnetic: captura 3D multicámara de caballo y jinete y puntuación asistida.
+"""ROCA: captura 3D multicámara de caballo y jinete y puntuación asistida.
 
 Sistema de coordenadas de pista (metros):
     x: a lo largo del lado largo, A (x=0) -> C (x=40)

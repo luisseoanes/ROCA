@@ -1,4 +1,4 @@
-"""Genera el documento PDF de propuesta técnica (docs/Cohnetic_Propuesta_Tecnica.pdf).
+"""Genera el documento PDF de propuesta técnica (docs/ROCA_Propuesta_Tecnica.pdf).
 
 Usa los datos reales del último PoC (web/data/report.json) y las capturas de docs/img/
 (generadas con scripts/capturas_web.py). Se maqueta en HTML y se imprime con Chrome.
@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from cohnetic.protocol import MOVEMENTS  # noqa: E402
+from roca.protocol import MOVEMENTS  # noqa: E402
 
 DOCS = ROOT / "docs"
 CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
@@ -230,7 +230,7 @@ pre { font-family: Consolas, monospace; font-size: 8.4pt; background: #f4f3ef; p
 
 body = f"""
 <div class="cover">
-  <div class="brand"><div class="logo">C</div><span>Cohnetic</span></div>
+  <div class="brand"><div class="logo">R</div><span>ROCA</span></div>
   <h1>Captura 3D de caballo y jinete<br>y puntuación asistida en Equitación de Trabajo</h1>
   <div class="sub">Propuesta técnica, plan de trabajo y resultados del proof of concept</div>
   {fig("02_lateral_galope.png", "Reconstrucción 3D del binomio al galope en el ejercicio 8. El segmento rojo es el plano nasal, que el sistema marca porque va más de 10° detrás de la vertical.")}
@@ -534,14 +534,14 @@ body = f"""
   <h2>Anexo B. Código y cómo ejecutarlo</h2>
   <p>El proyecto está en Python (numpy, scipy) para el pipeline y en HTML/JavaScript (Three.js) para la web.</p>
   <table><tr><th style="width:32%">Módulo</th><th>Función</th></tr>
-    <tr><td><code>cohnetic/camera.py</code></td><td>Modelo de cámara y calibración extrínseca con las letras</td></tr>
-    <tr><td><code>cohnetic/triangulation.py</code></td><td>Triangulación RANSAC multivista y filtrado temporal</td></tr>
-    <tr><td><code>cohnetic/protocol.py</code></td><td>Hoja de ejercicios: textos, directrices, coeficientes, controles y ruta</td></tr>
-    <tr><td><code>cohnetic/segmentation.py</code></td><td>División de la trayectoria en ejercicios</td></tr>
-    <tr><td><code>cohnetic/metrics/</code></td><td>Pisadas, aires, transiciones, figuras, nuca, jinete y eventos</td></tr>
-    <tr><td><code>cohnetic/scoring.py</code>, <code>advice.py</code></td><td>Reglas de puntuación y oportunidades de mejora</td></tr>
-    <tr><td><code>cohnetic/synth.py</code></td><td>Generador sintético (solo PoC): movimiento, cámaras y detecciones</td></tr>
-    <tr><td><code>cohnetic/pipeline.py</code>, <code>report.py</code></td><td>Orquestación y exportación de datos para la web</td></tr>
+    <tr><td><code>roca/camera.py</code></td><td>Modelo de cámara y calibración extrínseca con las letras</td></tr>
+    <tr><td><code>roca/triangulation.py</code></td><td>Triangulación RANSAC multivista y filtrado temporal</td></tr>
+    <tr><td><code>roca/protocol.py</code></td><td>Hoja de ejercicios: textos, directrices, coeficientes, controles y ruta</td></tr>
+    <tr><td><code>roca/segmentation.py</code></td><td>División de la trayectoria en ejercicios</td></tr>
+    <tr><td><code>roca/metrics/</code></td><td>Pisadas, aires, transiciones, figuras, nuca, jinete y eventos</td></tr>
+    <tr><td><code>roca/scoring.py</code>, <code>advice.py</code></td><td>Reglas de puntuación y oportunidades de mejora</td></tr>
+    <tr><td><code>roca/synth.py</code></td><td>Generador sintético (solo PoC): movimiento, cámaras y detecciones</td></tr>
+    <tr><td><code>roca/pipeline.py</code>, <code>report.py</code></td><td>Orquestación y exportación de datos para la web</td></tr>
     <tr><td><code>web/</code></td><td>Aplicación web (visor 3D e informe)</td></tr>
     <tr><td><code>tests/</code></td><td>Tests automáticos</td></tr>
   </table>
@@ -555,14 +555,14 @@ python scripts/build_doc.py        # este PDF</pre>
 </div>
 """
 
-doc = f"""<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cohnetic — Propuesta técnica</title>
+doc = f"""<!doctype html><html lang="es"><head><meta charset="utf-8"><title>ROCA — Propuesta técnica</title>
 <style>{CSS}</style></head><body>{body}</body></html>"""
 
 
 def main():
     html_path = DOCS / "propuesta_tecnica.html"
     html_path.write_text(doc, encoding="utf-8")
-    pdf_path = DOCS / "Cohnetic_Propuesta_Tecnica.pdf"
+    pdf_path = DOCS / "ROCA_Propuesta_Tecnica.pdf"
     from playwright.sync_api import sync_playwright
     launch = {"executable_path": CHROME} if os.path.exists(CHROME) else {}
     with sync_playwright() as p:
@@ -574,7 +574,7 @@ def main():
                display_header_footer=True,
                header_template="<div></div>",
                footer_template='<div style="font-size:8px;color:#898781;width:100%;padding:0 16mm;display:flex;justify-content:space-between;font-family:Segoe UI,sans-serif">'
-                               '<span>Cohnetic · Propuesta técnica y proof of concept · v0.1</span>'
+                               '<span>ROCA · Propuesta técnica y proof of concept · v0.1</span>'
                                '<span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>')
         b.close()
     print("PDF:", pdf_path)

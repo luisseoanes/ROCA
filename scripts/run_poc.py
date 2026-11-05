@@ -18,13 +18,13 @@ try:
 except Exception:
     pass
 
-from cohnetic.pipeline import run_poc  # noqa: E402
-from cohnetic.protocol import DEMO_PROFILE, IDEAL_PROFILE  # noqa: E402
-from cohnetic.report import write_web_data  # noqa: E402
+from roca.pipeline import run_poc  # noqa: E402
+from roca.protocol import DEMO_PROFILE, IDEAL_PROFILE  # noqa: E402
+from roca.report import write_web_data  # noqa: E402
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Cohnetic PoC: captura 3D sintética -> análisis -> puntuación -> web")
+    ap = argparse.ArgumentParser(description="ROCA PoC: captura 3D sintética -> análisis -> puntuación -> web")
     ap.add_argument("--profile", choices=["demo", "ideal"], default="demo")
     ap.add_argument("--cams", type=int, default=6, choices=range(4, 9))
     ap.add_argument("--seed", type=int, default=7)

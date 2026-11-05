@@ -1,4 +1,4 @@
-# Arquitectura de Cohnetic
+# Arquitectura de ROCA
 
 ## 1. Objetivo
 

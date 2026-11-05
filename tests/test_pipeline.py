@@ -10,14 +10,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from cohnetic import arena  # noqa: E402
-from cohnetic.analysis import analyze  # noqa: E402
-from cohnetic.camera import calibrate_extrinsics_planar  # noqa: E402
-from cohnetic.metrics.geometry import fit_circle  # noqa: E402
-from cohnetic.protocol import DEMO_PROFILE, IDEAL_PROFILE  # noqa: E402
-from cohnetic.scoring import BASE, score  # noqa: E402
-from cohnetic.synth import make_rig, simulate_ride  # noqa: E402
-from cohnetic.triangulation import triangulate  # noqa: E402
+from roca import arena  # noqa: E402
+from roca.analysis import analyze  # noqa: E402
+from roca.camera import calibrate_extrinsics_planar  # noqa: E402
+from roca.metrics.geometry import fit_circle  # noqa: E402
+from roca.protocol import DEMO_PROFILE, IDEAL_PROFILE  # noqa: E402
+from roca.scoring import BASE, score  # noqa: E402
+from roca.synth import make_rig, simulate_ride  # noqa: E402
+from roca.triangulation import triangulate  # noqa: E402
 
 
 @pytest.fixture(scope="module")

@@ -133,6 +133,7 @@ button, select, input { font: inherit; color: inherit; }
 .chip { display: inline-flex; align-items: center; gap: 6px; }
 .chip::before { content: ""; width: 9px; height: 9px; border-radius: 3px; background: var(--chip, var(--g-unknown)); }
 .stage-msg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-secondary); padding: 20px; text-align: center; }
+.stage-msg[hidden] { display: none; } /* si no, la capa vacía tapa el lienzo y bloquea el ratón */
 
 .transport { display: flex; align-items: center; gap: 10px; padding: 10px 14px 4px; }
 .icon-btn {

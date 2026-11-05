@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cohnetic · Análisis de doma</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">C</div>
+      <div>
+        <h1>Cohnetic</h1>
+        <p class="sub" id="test-name">—</p>
+      </div>
+    </div>
+    <div class="who">
+      <span class="badge" id="synthetic-badge" hidden>Datos sintéticos · proof of concept</span>
+      <span id="rider-name">—</span>
+    </div>
+    <div class="hero" aria-live="polite">
+      <div class="hero-num"><span id="score-pct">—</span><small>%</small></div>
+      <div class="hero-detail" id="score-detail">—</div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Visor 3D -->
+    <section class="panel viewer" aria-label="Visor 3D">
+      <div class="viewer-head">
+        <h2>Reconstrucción 3D</h2>
+        <div class="seg" role="group" aria-label="Vista">
+          <button data-view="orbit" class="on">Libre</button>
+          <button data-view="follow">Seguir</button>
+          <button data-view="side">Lateral</button>
+          <button data-view="top">Cenital</button>
+          <button data-view="judge">Juez en C</button>
+        </div>
+      </div>
+      <div class="stage-wrap">
+        <div id="stage"></div>
+        <div class="hud">
+          <div class="hud-row"><span class="k">Ejercicio</span><span id="hud-mov">—</span></div>
+          <div class="hud-row"><span class="k">Aire</span><span id="hud-gait" class="chip">—</span></div>
+          <div class="hud-row"><span class="k">Nuca</span><span id="hud-hnp">—</span></div>
+        </div>
+        <div class="stage-msg" id="stage-msg" hidden></div>
+      </div>
+      <div class="transport">
+        <button id="btn-play" class="icon-btn" aria-label="Reproducir">▶</button>
+        <div class="timeline">
+          <input type="range" id="scrub" min="0" max="1000" value="0" step="1" aria-label="Tiempo">
+          <div class="marks" id="mov-marks"></div>
+        </div>
+        <span class="time" id="time">0:00</span>
+        <select id="speed" aria-label="Velocidad">
+          <option value="0.25">0.25×</option>
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+        </select>
+      </div>
+      <div class="toggles">
+        <label><input type="checkbox" id="t-horse" checked> Caballo</label>
+        <label><input type="checkbox" id="t-rider" checked> Jinete</label>
+        <label><input type="checkbox" id="t-trail" checked> Trayectoria</label>
+        <label><input type="checkbox" id="t-figs" checked> Figuras teóricas</label>
+        <label><input type="checkbox" id="t-cams"> Cámaras</label>
+        <label><input type="checkbox" id="t-nasal" checked> Plano nasal</label>
+      </div>
+    </section>
+
+    <!-- Panel de informe -->
+    <section class="panel report" aria-label="Informe">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="summary" class="on">Resumen</button>
+        <button role="tab" data-tab="sheet">Hoja de puntuación</button>
+        <button role="tab" data-tab="improve">Mejoras</button>
+        <button role="tab" data-tab="analysis">Análisis</button>
+        <button role="tab" data-tab="quality">Calidad 3D</button>
+      </nav>
+      <div class="tab-body">
+        <div data-pane="summary" class="pane on" id="pane-summary"></div>
+        <div data-pane="sheet" class="pane" id="pane-sheet"></div>
+        <div data-pane="improve" class="pane" id="pane-improve"></div>
+        <div data-pane="analysis" class="pane" id="pane-analysis"></div>
+        <div data-pane="quality" class="pane" id="pane-quality"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    Puntuación orientativa generada automáticamente a partir de métricas 3D y reglas del reglamento RFHE 2026 y del manual FEI.
+    No sustituye al jurado. <span id="gen-date"></span>
+  </footer>
+
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+
+  <script src="data/report.js"></script>
+  <script src="data/motion.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

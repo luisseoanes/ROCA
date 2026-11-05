@@ -1,0 +1,7 @@
+numpy>=1.26
+scipy>=1.11
+pytest>=8          # tests
+# Fase 2 (vídeo real), no necesarias para el PoC:
+# opencv-python>=4.9        # lectura de vídeo, calibración intrínseca ChArUco
+# rtmlib / mmpose          # keypoints del jinete (RTMPose)
+# deeplabcut               # keypoints del caballo (SuperAnimal-Quadruped + fine-tuning PFERD)

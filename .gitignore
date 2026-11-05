@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Documentación de terceros (reglamentos, manuales y artículos con derechos de autor):
+# se mantienen en local y no se publican. Ver la sección "Documentación de referencia" del README.
+/*.pdf

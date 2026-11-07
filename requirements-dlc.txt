@@ -1,4 +1,4 @@
-# Detector del caballo y entrenamiento con PFERD. DeepLabCut necesita Python 3.10-3.12
-# (usar un entorno aparte: python3.12 -m venv .venv-dlc).
+# Detector del caballo (DeepLabCut 3, PyTorch) y entrenamiento con PFERD. Python 3.10-3.12.
+# Probado con Python 3.12 + DeepLabCut 3.0.2 + PyTorch 2.x en Apple Silicon (MPS).
 -r requirements-video.txt
-deeplabcut[modelzoo]>=3.0
+deeplabcut[modelzoo]>=3.0.2

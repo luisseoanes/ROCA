@@ -1,7 +1,7 @@
-# Pipeline con vídeo real (además de requirements.txt). Probado con Python 3.15.
+# Pipeline con vídeo real (además de requirements.txt). Python 3.10-3.12, el mismo entorno que
+# DeepLabCut:  python3.12 -m venv .venv-dlc && .venv-dlc/bin/pip install -r requirements-dlc.txt
 -r requirements.txt
 opencv-contrib-python>=4.9   # vídeo, ChArUco (calibración intrínseca), corrección de distorsión
-rtmlib>=0.0.16               # RTMPose (jinete); backend "opencv" por defecto
+rtmlib>=0.0.16               # RTMPose (jinete)
+onnxruntime>=1.17            # backend de RTMPose (el de OpenCV 5 falla con YOLOX); sin wheels para Python 3.13+
 tqdm                         # dependencia de rtmlib no declarada
-# Opcional, más rápido para RTMPose (backend "onnxruntime"); no hay wheels para Python 3.15:
-# onnxruntime

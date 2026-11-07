@@ -25,7 +25,7 @@ alrededor de la pista, y convertir esa reconstrucción en:
 | Captura | Simulada (`synth.py`) | **Implementado** (`video.py`, `session.py`): vídeos por cámara, desfases por hardware o sincronización por flash. Recomendado: cámaras global shutter 4K, 50-120 fps, genlock/PTP |
 | Calibración intrínseca | Conocida | **Implementado** (`calibration.py`): tablero ChArUco por cámara (OpenCV) + corrección de distorsión de las detecciones |
 | Calibración extrínseca | **Real**: letras + esquinas de la pista, homografía + Levenberg-Marquardt | Igual, con las letras medidas con estación total / GPS RTK. Opcional: ajuste de haces con varita |
-| Keypoints 2D | Simulados con ruido 1.6 px, 5% pérdidas, 35% oclusión del lado lejano, 1.5% falsos positivos | **Implementado** (`detectors/`): jinete RTMPose (rtmlib). Caballo: SuperAnimal-Quadruped sin reentrenar o modelo propio; conversión de **PFERD** y entrenamiento en `training/`. **Pendiente:** entrenar el modelo y validarlo con vídeo de pista |
+| Keypoints 2D | Simulados con ruido 1.6 px, 5% pérdidas, 35% oclusión del lado lejano, 1.5% falsos positivos | **Implementado** (`detectors/`): jinete RTMPose (rtmlib). Caballo: SuperAnimal-Quadruped sin reentrenar o modelo propio; conversión de **PFERD** (mapeo real de 132 marcadores a 26 puntos) y ajuste fino desde SuperAnimal en `training/`. **Validado con vídeo y mocap reales de PFERD** (`scripts/validate_pferd.py`, pestaña "Datos reales" de la web). **Pendiente:** entrenamiento completo ([ENTRENAMIENTO_PC.md](ENTRENAMIENTO_PC.md)) y vídeo de pista |
 | Triangulación | **Real**: RANSAC por pares + DLT con inliers, Butterworth 8 Hz | Igual; añadir restricciones de longitud de huesos y ajuste de modelo (hSMAL / SMPL-X) |
 | Métricas y nota | **Reales** | Calibrar umbrales con jueces |
 
@@ -62,8 +62,9 @@ alrededor de la pista, y convertir esa reconstrucción en:
 ## 6. Hoja de ruta
 
 1. **Captura piloto (2-4 semanas):** 4-6 cámaras sincronizadas en una pista de doma; grabar 10-20 recorridos con hoja de juez.
-2. **Keypoints del caballo:** ajustar DeepLabCut SuperAnimal con PFERD (revisar licencia CC BY-NC-SA y términos de hSMAL si el uso es comercial) y con 500-1000 frames propios etiquetados.
-3. ~~Sustituir `synth.observe` por el detector real~~ Hecho: `roca/session.py` + `scripts/run_video.py`. Falta probarlo con vídeo de pista real.
+2. **Keypoints del caballo:** ajustar DeepLabCut SuperAnimal con PFERD (preparado y probado de extremo a extremo; falta el entrenamiento largo en GPU, ver [ENTRENAMIENTO_PC.md](ENTRENAMIENTO_PC.md)) y después con 500-1000 frames propios de pista. Licencia de PFERD: datos sólo para investigación no comercial, sin redistribución; para producto comercial hace falta un modelo entrenado con datos propios.
+3. ~~Sustituir `synth.observe` por el detector real~~ Hecho: `roca/session.py` + `scripts/run_video.py`, validado con el vídeo multicámara de PFERD contra mocap. Falta probarlo con vídeo de pista real.
+   Tiempo de cómputo (2 min de recorrido, 6 cámaras, análisis a 25 fps): ~9 h en Mac M5 (medido 0,6 frames/s en el caballo), ~1–2 h en GTX 1660 Ti, ~16–32 min en RTX 5070 (estimados). El cuello de botella es el detector de cajas del caballo.
 4. **Calibrar umbrales** comparando con las notas de los jueces (correlación por ejercicio, ±0.5 puntos).
 5. **Ampliar el protocolo:** resto de categorías del Anexo II, manejabilidad (obstáculos, derribos) y velocidad (tiempos).
 6. **Audio** para voz/chasquidos; **SMPL-X/hSMAL** para la malla 3D en el visor.

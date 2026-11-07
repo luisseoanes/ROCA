@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+.venv-*/
 venv/
 
 # Documentación de terceros (reglamentos, manuales y artículos con derechos de autor):
@@ -12,3 +13,10 @@ venv/
 dist/
 
 .DS_Store
+
+# Datos de terceros y modelos entrenados (no redistribuibles). Sólo /data de la raíz: web/data sí se publica
+/data/
+/modelos/
+# Visor y vídeos con datos derivados de PFERD (uso interno)
+web/data/pferd_video/
+web/data/pferd_local.js

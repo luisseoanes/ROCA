@@ -80,6 +80,7 @@
         <button role="tab" data-tab="improve">Mejoras</button>
         <button role="tab" data-tab="analysis">Análisis</button>
         <button role="tab" data-tab="quality">Calidad 3D</button>
+        <button role="tab" data-tab="real" hidden>Datos reales (PFERD)</button>
       </nav>
       <div class="tab-body">
         <div data-pane="summary" class="pane on" id="pane-summary"></div>
@@ -87,6 +88,7 @@
         <div data-pane="improve" class="pane" id="pane-improve"></div>
         <div data-pane="analysis" class="pane" id="pane-analysis"></div>
         <div data-pane="quality" class="pane" id="pane-quality"></div>
+        <div data-pane="real" class="pane" id="pane-real"></div>
       </div>
     </section>
   </main>
@@ -100,6 +102,8 @@
 
   <script src="data/report.js"></script>
   <script src="data/motion.js"></script>
+  <script src="data/pferd.js"></script>
+  <script src="data/pferd_local.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
   <script src="app.js"></script>

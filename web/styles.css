@@ -233,6 +233,20 @@ tfoot td { font-weight: 650; border-bottom: 0; }
 .chart .lbl { fill: var(--text-secondary); font-size: 11px; }
 .chart .seg-lbl { font-size: 10.5px; fill: #ffffff; pointer-events: none; }
 .chart .seg-lbl.dark { fill: #0b0b0b; }
+.scroll-x { overflow-x: auto; }
+.pv-bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 10px; }
+.pv-bar select { max-width: 100%; }
+.pv-check { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--text-secondary); }
+.pv-check[hidden] { display: none; }
+.pv-stage { position: relative; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+.pv-stage[hidden] { display: none; }
+.pv-stage canvas { display: block; }
+.pv-stage video { display: block; width: 100%; height: auto; background: #000; }
+.pv-legend { position: absolute; left: 10px; top: 8px; display: flex; gap: 12px; font-size: 12px; color: var(--text-secondary); pointer-events: none; }
+.pv-legend .lg, .legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.pv-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.pv-empty { padding: 16px; }
+#pv-transport[hidden] { display: none; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
@@ -274,3 +288,6 @@ tfoot td { font-weight: 650; border-bottom: 0; }
   .seg button { padding: 5px 7px; }
   .tab-body { padding: 12px; }
 }
+
+th.n.wrap { white-space: normal; min-width: 90px; }
+.scroll-x, .grid2 > div { min-width: 0; }

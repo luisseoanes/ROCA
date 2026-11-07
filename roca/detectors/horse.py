@@ -85,7 +85,11 @@ def read_dlc_h5(path: str | Path) -> tuple[list[str], np.ndarray, np.ndarray]:
             all_kp[a, :, j, 0] = s["x"].to_numpy()
             all_kp[a, :, j, 1] = s["y"].to_numpy()
             all_c[a, :, j] = s["likelihood"].to_numpy()
-    best = np.nan_to_num(all_c).mean(axis=2).argmax(axis=0)  # (F,)
+    # DeepLabCut 3 escribe -1 en x, y y likelihood cuando no hay detección
+    missing = ~(all_c > 0) | ~np.isfinite(all_kp).all(-1)
+    all_kp[missing] = np.nan
+    all_c[missing] = 0.0
+    best = all_c.mean(axis=2).argmax(axis=0)  # (F,)
     fr = np.arange(F)
     return bodyparts, all_kp[best, fr], np.nan_to_num(all_c[best, fr])
 
@@ -108,9 +112,11 @@ class SuperAnimalHorse:
     names = HORSE_KP
 
     def __init__(self, work_dir: str | Path, model_name: str = "hrnet_w32",
-                 detector_name: str = "fasterrcnn_resnet50_fpn_v2", device: str | None = None):
+                 detector_name: str = "fasterrcnn_resnet50_fpn_v2", device: str | None = None,
+                 max_individuals: int = 2, batch_size: int = 8, bbox_threshold: float = 0.5):
         self.work_dir = Path(work_dir)
         self.model_name, self.detector_name, self.device = model_name, detector_name, device
+        self.max_individuals, self.batch_size, self.bbox_threshold = max_individuals, batch_size, bbox_threshold
 
     def detect_video(self, path: str, frames: list[int], context: dict | None = None):
         dlc = _deeplabcut()
@@ -120,9 +126,12 @@ class SuperAnimalHorse:
             h5 = _latest_h5(self.work_dir, stem)
         except FileNotFoundError:
             kwargs = {"device": self.device} if self.device else {}
+            # API de DeepLabCut 3.0 (video_extensions; antes videotype)
             dlc.video_inference_superanimal([str(path)], "superanimal_quadruped", model_name=self.model_name,
-                                            detector_name=self.detector_name, videotype=Path(path).suffix,
-                                            dest_folder=str(self.work_dir), **kwargs)
+                                            detector_name=self.detector_name, video_extensions=Path(path).suffix,
+                                            dest_folder=str(self.work_dir), max_individuals=self.max_individuals,
+                                            batch_size=self.batch_size, detector_batch_size=self.batch_size,
+                                            bbox_threshold=self.bbox_threshold, create_labeled_video=False, **kwargs)
             h5 = _latest_h5(self.work_dir, stem)
         names, kp, conf = read_dlc_h5(h5)
         kp, conf = apply_mapping(names, kp, conf, SA_TO_ROCA, HORSE_KP)
@@ -133,19 +142,28 @@ class DLCProjectHorse:
     """Modelo propio: proyecto DeepLabCut cuyos bodyparts son exactamente HORSE_KP."""
     names = HORSE_KP
 
-    def __init__(self, config_path: str | Path, work_dir: str | Path, shuffle: int = 1):
+    def __init__(self, config_path: str | Path, work_dir: str | Path, shuffle: int = 1, device: str | None = None,
+                 batch_size: int = 8):
         self.config, self.work_dir, self.shuffle = str(config_path), Path(work_dir), shuffle
+        self.device, self.batch_size = device, batch_size
+
+    def cache_token(self) -> str:
+        """Cambia cuando se reentrena el modelo (snapshots más recientes)."""
+        snaps = list(Path(self.config).parent.glob("dlc-models-pytorch/**/*.pt"))
+        return str(max((int(p.stat().st_mtime) for p in snaps), default=0))
 
     def detect_video(self, path: str, frames: list[int], context: dict | None = None):
         dlc = _deeplabcut()
-        self.work_dir.mkdir(parents=True, exist_ok=True)
+        out = self.work_dir / f"modelo_{self.cache_token()}"  # una carpeta por versión del modelo
+        out.mkdir(parents=True, exist_ok=True)
         stem = Path(path).stem
         try:
-            h5 = _latest_h5(self.work_dir, stem)
+            h5 = _latest_h5(out, stem)
         except FileNotFoundError:
-            dlc.analyze_videos(self.config, [str(path)], shuffle=self.shuffle, destfolder=str(self.work_dir),
-                               videotype=Path(path).suffix)
-            h5 = _latest_h5(self.work_dir, stem)
+            kwargs = {"device": self.device} if self.device else {}
+            dlc.analyze_videos(self.config, [str(path)], shuffle=self.shuffle, destfolder=str(out),
+                               video_extensions=Path(path).suffix, batch_size=self.batch_size, **kwargs)
+            h5 = _latest_h5(out, stem)
         names, kp, conf = read_dlc_h5(h5)
         missing = [n for n in HORSE_KP if n not in names]
         if missing:

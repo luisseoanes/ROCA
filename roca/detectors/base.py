@@ -26,13 +26,13 @@ def apply_mapping(src_names: list[str], kp: np.ndarray, conf: np.ndarray,
                   mapping: dict[str, Source], target_names: list[str]) -> tuple[np.ndarray, np.ndarray]:
     """Traduce keypoints del esqueleto del detector al de ROCA.
 
-    kp (..., Js, 2), conf (..., Js) -> (..., Jt, 2), (..., Jt).
+    kp (..., Js, D), conf (..., Js) -> (..., Jt, D), (..., Jt). D = 2 (píxeles) o 3 (mocap).
     mapping[destino] = "nombre_origen" | {"mean": [nombres]} | None.
     Para una media se exige que todos los puntos existan; la confianza es la mínima.
     """
     idx = {n: i for i, n in enumerate(src_names)}
     lead = kp.shape[:-2]
-    out = np.full((*lead, len(target_names), 2), np.nan)
+    out = np.full((*lead, len(target_names), kp.shape[-1]), np.nan)
     oc = np.zeros((*lead, len(target_names)))
     for t, name in enumerate(target_names):
         src = mapping.get(name)

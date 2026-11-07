@@ -16,6 +16,7 @@ Ejemplo de session.json (rutas relativas al propio fichero):
   "start_frame": 0, "stop_frame": null,      // tramo de la prueba, en frames de la primera cámara
   "stride": 1,                               // 2 = analizar un frame de cada dos (más rápido)
   "min_conf": 0.4,
+  "thr_px": 12,                              // umbral de RANSAC (px); subir con cámaras de menos resolución o detector ruidoso
   "detectors": {"horse": {"type": "superanimal"}, "rider": {"type": "rtmpose", "mode": "balanced"}},
   "work_dir": "work"
 }
@@ -89,15 +90,18 @@ def frame_plan(n_frames: list[int], offsets: list[int], start: int = 0, stop: in
 
 # ----------------------------------------------------------------------------- detecciones
 
-def _cache_key(det_cfg: dict, frames: np.ndarray, video: str) -> str:
+def _cache_key(det_cfg: dict, frames: np.ndarray, video: str, token: str = "") -> str:
+    """token: huella del detector (p. ej. fecha del último snapshot del modelo o mapeo de puntos),
+    para no reutilizar detecciones de un modelo reentrenado en la misma carpeta."""
     st = Path(video).stat()
-    raw = json.dumps([det_cfg, int(frames[0]), int(frames[-1]), len(frames), st.st_size, int(st.st_mtime)], sort_keys=True)
+    raw = json.dumps([det_cfg, token, int(frames[0]), int(frames[-1]), len(frames), st.st_size, int(st.st_mtime)], sort_keys=True)
     return hashlib.sha1(raw.encode()).hexdigest()[:16]
 
 
 def detect_cached(det, det_cfg: dict, video: str, frames: np.ndarray, cache: Path, context: dict | None = None,
                   log=print, label: str = "") -> tuple[np.ndarray, np.ndarray]:
-    key = _cache_key(det_cfg, frames, video)
+    token = det.cache_token() if hasattr(det, "cache_token") else ""
+    key = _cache_key(det_cfg, frames, video, token)
     f = cache / f"{label}_{key}.npz"
     if f.exists():
         d = np.load(f)
@@ -177,13 +181,18 @@ def reconstruct(cfg: dict, detectors: dict | None = None, log=print) -> dict:
 
     uv = assemble_uv(horse, rider, rig, dists, cfg["min_conf"])
     t0 = time.time()
-    rec = triangulate_session(rig, uv, fps)
+    rec = triangulate_session(rig, uv, fps, thr_px=float(cfg.get("thr_px", 12.0)))
     X = rec["X"]
     derived = derive_missing(X)
     log(f"[3/4] Triangulación en {time.time() - t0:.0f} s: reproyección media {np.nanmean(rec['reproj_px']):.2f} px, "
         f"cobertura {rec['raw_valid'].mean() * 100:.0f}%" + (f"; derivados: {', '.join(derived)}" if derived else ""))
     return {"X": X, "rec": rec, "uv": uv, "rig": rig, "fps": fps, "frames": base, "offsets": offsets,
             "derived": derived, "quality": quality(rec, uv, rig, derived)}
+
+
+def _nanmean(a: np.ndarray, nd: int = 2) -> float | None:
+    """Media ignorando NaN; None si no hay datos (p. ej. el jinete en una sesión sin jinete)."""
+    return round(float(np.nanmean(a)), nd) if np.isfinite(a).any() else None
 
 
 def quality(rec: dict, uv: np.ndarray, rig: list, derived: list[str]) -> dict:
@@ -202,10 +211,10 @@ def quality(rec: dict, uv: np.ndarray, rig: list, derived: list[str]) -> dict:
         return {
             "real": True,
             "raw_coverage_pct": round(float(cov.mean()) * 100, 1),
-            "reproj_px": round(float(np.nanmean(rp)), 2),
+            "reproj_px": _nanmean(rp),
             "p95_reproj_px": round(float(np.nanpercentile(rp, 95)), 2) if np.isfinite(rp).any() else None,
             "mean_views": round(float(rec["n_inliers"][cov].mean()), 2) if cov.any() else 0.0,
-            "group_reproj_px": {g: round(float(np.nanmean(rp[:, [ALL_KP.index(n) for n in names]])), 2) for g, names in groups.items()},
+            "group_reproj_px": {g: _nanmean(rp[:, [ALL_KP.index(n) for n in names]]) for g, names in groups.items()},
             "group_coverage_pct": {g: round(float(cov[:, [ALL_KP.index(n) for n in names]].mean()) * 100, 1) for g, names in groups.items()},
             "detection_rate_pct": {cam.name: round(float(r) * 100, 1) for cam, r in zip(rig, det_rate)},
             "derived_points": derived,

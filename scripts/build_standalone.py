@@ -1,6 +1,6 @@
 """Genera un único HTML autónomo para enviar (dist/ROCA.html).
 
-Incrusta en index.html: styles.css, app.js, los datos (data/report.js, data/motion.js)
+Incrusta en index.html: styles.css, app.js, los datos (data/report.js, data/motion.js y, si existe, data/pferd.js)
 y Three.js (descargado de jsdelivr). El resultado se abre con doble clic, sin
 servidor y sin conexión a internet.
 
@@ -24,14 +24,28 @@ def js_tag(code: str) -> str:
 
 
 def main():
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--incluir-local", action="store_true",
+                    help="incluye data/pferd_local.js (esqueletos de PFERD; sólo uso interno, no redistribuir)")
+    a = ap.parse_args()
     html = (WEB / "index.html").read_text(encoding="utf-8")
+    local_tag = '<script src="data/pferd_local.js"></script>'
+    if a.incluir_local and (WEB / "data" / "pferd_local.js").exists():
+        html = html.replace(local_tag, js_tag((WEB / "data" / "pferd_local.js").read_text(encoding="utf-8")))
+    else:
+        html = html.replace(local_tag, "")
 
     css = (WEB / "styles.css").read_text(encoding="utf-8")
     html = html.replace('<link rel="stylesheet" href="styles.css">', "<style>\n" + css + "\n</style>")
 
-    for name in ("data/report.js", "data/motion.js", "app.js"):
+    for name in ("data/report.js", "data/motion.js", "data/pferd.js", "app.js"):
         tag = f'<script src="{name}"></script>'
         assert tag in html, f"no se encontró {tag} en index.html"
+        if not (WEB / name).exists():  # data/pferd.js es opcional (validación con PFERD)
+            html = html.replace(tag, "")
+            continue
         code = (WEB / name).read_text(encoding="utf-8")
         html = html.replace(tag, js_tag(code))
 

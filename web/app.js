@@ -442,10 +442,11 @@
       ${bestWorst()}
     </div>
     ${R.meta.synthetic ? `<div class="section alert warning"><span class="ico" aria-hidden="true">!</span><div><b>Proof of concept con datos sintéticos</b>
-      El recorrido se ha generado por simulación con errores conocidos y ha pasado por el pipeline real (cámaras simuladas → triangulación → métricas → puntuación). Ver <button class="link" id="go-quality">Calidad 3D</button>.</div></div>` : ""}
+      El recorrido se ha generado por simulación con errores conocidos y ha pasado por el pipeline real (cámaras simuladas → triangulación → métricas → puntuación). Ver <button class="link" id="go-quality">Calidad 3D</button>${window.ROCA_PFERD ? ` y la <button class="link" id="go-real">validación con vídeo y mocap reales (PFERD)</button>` : ""}.</div></div>` : ""}
   `;
   $("#see-all-opp").addEventListener("click", () => showTab("improve"));
   $("#go-quality")?.addEventListener("click", () => showTab("quality"));
+  $("#go-real")?.addEventListener("click", () => showTab("real"));
 
   function bestWorst() {
     const sorted = [...movs].sort((a, b) => a.note - b.note);
@@ -783,13 +784,258 @@
     <div class="section">
       <h3>Limitaciones de esta versión</h3>
       <ul class="secondary">
-        <li>El movimiento y las detecciones 2D son sintéticos; con vídeo real el error dependerá del detector de keypoints (RTMPose / DeepLabCut ajustado con PFERD).</li>
+        <li>El movimiento y las detecciones 2D de esta prueba son sintéticos. La validación con vídeo y mocap reales está en ${window.ROCA_PFERD ? `<button class="link" data-goto="real">Datos reales (PFERD)</button>` : "Datos reales (PFERD), tras ejecutar scripts/validate_pferd.py"}.</li>
         <li>Los umbrales de las reglas son provisionales y deben calibrarse con hojas de jueces reales.</li>
         <li>No se evalúa la voz/chasquidos (necesita audio), la expresión, la boca, las orejas ni la cola.</li>
         <li>La posición de la nuca se penaliza por regla explícita, no se aprende de las notas de los jueces (la literatura muestra que estas premian la hiperflexión).</li>
       </ul>
     </div>`;
   }
+
+  // ------------------------------------------------------------------ Datos reales (PFERD)
+  const P = window.ROCA_PFERD;
+  if (P && P.runs && P.runs.length) {
+    $('.tabs button[data-tab="real"]').hidden = false;
+    const runs = P.runs;
+    const det = runs.filter((r) => r.kind === "detector");
+    const sim = runs.filter((r) => r.kind === "simulado");
+    const best = det.length ? det.reduce((a, b) => (a.mpjpe_cm <= b.mpjpe_cm ? a : b)) : (sim[0] || runs[0]);
+    const r0 = runs[0];
+    const groups = Object.keys(r0.by_group_cm);
+    const KIND = { referencia: "Referencia", simulado: "Simulado", detector: "Detector real" };
+    const cm = (v, d = 1) => (v == null ? "—" : `${fmt(v, d)} cm`);
+
+    // error por frame (SVG): un trazo por configuración con detector o simulación
+    const series = runs.filter((r) => r.trace && r.kind !== "referencia");
+    const palette = ["--accent", "--warning", "--good", "--critical"];
+    function errChart() {
+      if (!series.length) return "";
+      const W = 640, H = 180, L = 36, B = 22, T = 8;
+      const tmax = Math.max(...series.map((s) => s.trace.t[s.trace.t.length - 1]));
+      const ymax = Math.max(5, ...series.flatMap((s) => s.trace.err_cm.filter((v) => v != null))) * 1.05;
+      const x = (t) => L + (t / tmax) * (W - L - 8), y = (v) => T + (1 - v / ymax) * (H - T - B);
+      const ticks = [0, ymax / 2, ymax].map((v) => `<g><line x1="${L}" x2="${W - 8}" y1="${y(v)}" y2="${y(v)}" class="grid"/>
+        <text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${fmt(v, 0)}</text></g>`).join("");
+      const paths = series.map((s, i) => {
+        let d = "", pen = false;
+        s.trace.t.forEach((t, k) => {
+          const v = s.trace.err_cm[k];
+          if (v == null) { pen = false; return; }
+          d += `${pen ? "L" : "M"}${x(t).toFixed(1)},${y(v).toFixed(1)}`; pen = true;
+        });
+        return `<path d="${d}" fill="none" stroke="var(${palette[i % palette.length]})" stroke-width="1.6"/>`;
+      }).join("");
+      const legend = series.map((s, i) => `<span class="lg"><i style="background:var(${palette[i % palette.length]})"></i>${esc(s.label)}</span>`).join("");
+      return `<div class="section"><h3>Error 3D por frame</h3>
+        <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Error 3D medio por frame (cm)">
+          ${ticks}<text x="${L}" y="${H - 4}">0 s</text><text x="${W - 8}" y="${H - 4}" text-anchor="end">${fmt(tmax, 0)} s</text>${paths}</svg>
+        <div class="legend">${legend}</div>
+        <p class="secondary">Error medio de los puntos del caballo en cada frame frente al mocap (cm).</p></div>`;
+    }
+
+    $("#pane-real").innerHTML = `
+    <div class="section">
+      <h3>Validación con datos reales: PFERD</h3>
+      <p class="secondary">Vídeo real de 10 cámaras calibradas y sincronizadas y mocap de 132 marcadores
+        (${esc(P.dataset)}, doi:${esc(P.doi)}). El vídeo pasa por el mismo pipeline que una sesión de pista
+        (calibración, detección 2D, triangulación RANSAC y suavizado) y la reconstrucción se compara con el mocap.
+        ${esc(P.note)} Tramo al trote de ${fmt(r0.n_frames / r0.fps, 0)} s (frames ${r0.frames ? r0.frames.join("–") : "—"}).</p>
+      <div class="kpis">
+        <div class="kpi"><div class="v num">${cm(best.mpjpe_cm)}</div><div class="l">Error 3D medio · ${esc(best.label)}</div></div>
+        <div class="kpi"><div class="v num">${cm(best.p95_cm)}</div><div class="l">Percentil 95</div></div>
+        <div class="kpi"><div class="v num">${fmt(best.pct_under_5cm, 0)}%</div><div class="l">Puntos con error &lt; 5 cm</div></div>
+        <div class="kpi"><div class="v num">${best.det_2d ? `${fmt(best.det_2d.mean_px, 1)} px` : "—"}</div><div class="l">Error del detector 2D</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <h3>Comparativa</h3>
+      <div class="scroll-x"><table><thead><tr><th>Configuración</th><th>Tipo</th><th class="n">Error medio</th><th class="n">Mediana</th><th class="n">p95</th>
+        <th class="n">&lt; 5 cm</th><th class="n">Reproyección</th><th class="n">Detector 2D</th></tr></thead>
+        <tbody>${runs.map((r) => `<tr><td>${esc(r.label)}</td><td>${KIND[r.kind]}</td><td class="n">${cm(r.mpjpe_cm, 2)}</td>
+          <td class="n">${cm(r.median_cm, 2)}</td><td class="n">${cm(r.p95_cm)}</td><td class="n">${fmt(r.pct_under_5cm, 0)}%</td>
+          <td class="n">${fmt(r.reproj_px, 1)} px</td><td class="n">${r.det_2d ? `${fmt(r.det_2d.mean_px, 1)} px` : "—"}</td></tr>`).join("")}</tbody></table></div>
+      <p class="secondary">«2D exacto» usa la proyección del mocap como si fuera el detector: aísla la calibración y la
+        triangulación (el error que queda es el del filtro de suavizado). «Simulado» añade a ese 2D ruido y pérdidas conocidos.
+        «Detector real» es el sistema completo sobre el vídeo.</p>
+    </div>
+    <div class="section grid2">
+      <div><h3>Error por zona</h3><div class="scroll-x"><table><thead><tr><th>Zona</th>${det.concat(series.filter((s) => s.kind === "simulado").slice(0, 1))
+        .map((r) => `<th class="n wrap">${esc(r.label)}</th>`).join("")}</tr></thead>
+        <tbody>${groups.map((g) => `<tr><td>${esc(g)}</td>${det.concat(series.filter((s) => s.kind === "simulado").slice(0, 1))
+          .map((r) => `<td class="n">${cm(r.by_group_cm[g])}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>
+      <div><h3>Qué mide y qué no</h3><ul class="secondary">
+        <li>PFERD está grabado en interior, sin jinete y a 1920×1088 con cámaras a unos 15 m (1 px ≈ 0,9 cm). En pista, con 4K y cámaras más cerca, cada píxel de error del detector cuesta menos.</li>
+        <li>El caballo de test (ID_1) no se ha usado para entrenar.</li>
+        <li>La punta de la cola no tiene marcador en PFERD y no se evalúa${best.derived_points && best.derived_points.length ? `; puntos estimados por geometría: ${best.derived_points.map(esc).join(", ")}` : ""}.</li>
+        <li>Datos de PFERD: licencia no comercial sin redistribución; aquí sólo se muestran métricas.</li>
+      </ul></div>
+    </div>
+    ${viewerSection()}
+    ${errChart()}`;
+    initPferdViewer();
+  }
+
+  // Visor 3D / vídeo de PFERD: sólo con web/data/pferd_local.js (uso interno, no se sube a git)
+  function viewerSection() {
+    const Lc = window.ROCA_PFERD_LOCAL;
+    if (!Lc || !P || !Lc.runs) return `<div class="section"><h3>Ver la reconstrucción</h3><p class="secondary">El visor 3D y
+      el vídeo con el esqueleto sólo están en la copia local (los datos de PFERD no se pueden redistribuir).
+      Para verlos: <code>python scripts/pferd_overlay.py</code> y <code>python scripts/pferd_report.py</code>.</p></div>`;
+    const opts = P.runs.filter((r) => Lc.runs[r.id]).map((r) => `<option value="${esc(r.id)}">${esc(r.label)} · ${fmt(r.mpjpe_cm, 1)} cm</option>`).join("");
+    return `<div class="section">
+      <h3>Ver la reconstrucción</h3>
+      <div class="pv-bar">
+        <div class="seg" role="group" aria-label="Vista PFERD">
+          <button data-pv="3d" class="on">Esqueleto 3D</button><button data-pv="video">Vídeo con esqueleto</button>
+        </div>
+        <select id="pv-run" aria-label="Configuración">${opts}</select>
+        <label class="pv-check" id="pv-ref-l"><input type="checkbox" id="pv-ref" checked> Mocap (referencia)</label>
+        <label class="pv-check" id="pv-follow-l"><input type="checkbox" id="pv-follow" checked> Seguir</label>
+      </div>
+      <div class="pv-stage" id="pv-3d"><div class="pv-legend"><span class="lg"><i style="background:#ff8c00"></i>ROCA (desde el vídeo)</span>
+        <span class="lg" id="pv-leg-ref"><i style="background:#3cc85a"></i>Mocap</span></div></div>
+      <div class="pv-stage" id="pv-video" hidden></div>
+      <div class="transport" id="pv-transport">
+        <button id="pv-play" class="icon-btn" aria-label="Reproducir">▶</button>
+        <div class="timeline"><input type="range" id="pv-scrub" min="0" max="${Lc.n - 1}" value="0" step="1" aria-label="Frame"></div>
+        <span class="time" id="pv-time">0.0 s</span>
+      </div>
+      <p class="secondary">Naranja: esqueleto reconstruido por ROCA desde el vídeo de 6 cámaras. Verde: mocap de marcadores (referencia). Uso interno.</p>
+    </div>`;
+  }
+
+  function initPferdViewer() {
+    const Lc = window.ROCA_PFERD_LOCAL;
+    const host = $("#pv-3d");
+    if (!Lc || !host || !window.THREE || !window.THREE.OrbitControls) return;
+    const T = window.THREE;
+    const J = Lc.names.length, N = Lc.n;
+    // mundo PFERD (x, y, z arriba, mm) -> three (x, z, -y) en m
+    const pt = (arr, f, j) => {
+      const k = (f * J + j) * 3;
+      return arr[k] == null ? null : new T.Vector3(arr[k] / 1000, arr[k + 2] / 1000, -arr[k + 1] / 1000);
+    };
+    const renderer = new T.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    host.appendChild(renderer.domElement);
+    const scene = new T.Scene();
+    const camera = new T.PerspectiveCamera(40, 16 / 9, 0.05, 200);
+    const controls = new T.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.maxPolarAngle = Math.PI * 0.495;
+    const grid = new T.GridHelper(30, 30);
+    scene.add(grid);
+    function theme() {
+      scene.background = new T.Color(css("--surface-2") || "#eeeeee");
+      grid.material.color = new T.Color(css("--grid") || "#cccccc");
+    }
+    theme();
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", theme);
+
+    function skeleton(color) {
+      const geo = new T.BufferGeometry();
+      geo.setAttribute("position", new T.Float32BufferAttribute(new Float32Array(Lc.edges.length * 6), 3));
+      const lines = new T.LineSegments(geo, new T.LineBasicMaterial({ color }));
+      const pg = new T.BufferGeometry();
+      pg.setAttribute("position", new T.Float32BufferAttribute(new Float32Array(J * 3), 3));
+      const pts = new T.Points(pg, new T.PointsMaterial({ color, size: 0.06 }));
+      const g = new T.Group(); g.add(lines); g.add(pts); scene.add(g);
+      return { g, lines, pts };
+    }
+    const rec = skeleton(0xff8c00), ref = skeleton(0x3cc85a);
+    function setSkel(sk, arr, f) {
+      const lp = sk.lines.geometry.attributes.position, pp = sk.pts.geometry.attributes.position;
+      Lc.edges.forEach(([a, b], i) => {
+        const p = pt(arr, f, a), q = pt(arr, f, b);
+        if (p && q) { lp.setXYZ(2 * i, p.x, p.y, p.z); lp.setXYZ(2 * i + 1, q.x, q.y, q.z); }
+        else { lp.setXYZ(2 * i, 0, -99, 0); lp.setXYZ(2 * i + 1, 0, -99, 0); }
+      });
+      for (let j = 0; j < J; j++) { const p = pt(arr, f, j); if (p) pp.setXYZ(j, p.x, p.y, p.z); else pp.setXYZ(j, 0, -99, 0); }
+      lp.needsUpdate = true; pp.needsUpdate = true;
+      sk.lines.geometry.computeBoundingSphere(); sk.pts.geometry.computeBoundingSphere();
+    }
+    const runSel = $("#pv-run"), refChk = $("#pv-ref"), follow = $("#pv-follow"), scrub = $("#pv-scrub");
+    const centroid = (f) => {
+      const c = new T.Vector3(); let n = 0;
+      for (let j = 0; j < J; j++) { const p = pt(Lc.mocap, f, j) || pt(Lc.runs[runSel.value], f, j); if (p) { c.add(p); n++; } }
+      return n ? c.multiplyScalar(1 / n) : c;
+    };
+    let f = 0, playing = false, last = 0, acc = 0, view = "3d";
+    const c0 = centroid(0);
+    camera.position.set(c0.x + 4.5, 3.4, c0.z + 4.5);
+    controls.target.copy(c0);
+    function draw() {
+      setSkel(rec, Lc.runs[runSel.value], f);
+      ref.g.visible = refChk.checked;
+      if (refChk.checked) setSkel(ref, Lc.mocap, f);
+      if (follow.checked) {
+        const d = centroid(f).sub(controls.target);
+        controls.target.add(d); camera.position.add(d);
+      }
+      scrub.value = f;
+      $("#pv-time").textContent = `${(f / Lc.fps).toFixed(1)} s`;
+    }
+    let lastW = 0;
+    function resize() {
+      const w = host.clientWidth || 600, h = Math.round(Math.min(420, w * 0.56));
+      lastW = w;
+      renderer.setSize(w, h, false); renderer.domElement.style.width = "100%"; renderer.domElement.style.height = `${h}px`;
+      camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    function loop(now) {
+      requestAnimationFrame(loop);
+      if ($(".pane.on")?.dataset.pane !== "real" || view !== "3d") { last = now; return; }
+      if (host.clientWidth && host.clientWidth !== lastW) resize();
+      if (playing) {
+        acc += (now - last) / 1000;
+        while (acc >= 1 / Lc.fps) { acc -= 1 / Lc.fps; f = (f + 1) % N; }
+        draw();
+      }
+      last = now;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    const play = $("#pv-play");
+    play.addEventListener("click", () => {
+      playing = !playing;
+      play.textContent = playing ? "❚❚" : "▶";
+      play.setAttribute("aria-label", playing ? "Pausa" : "Reproducir");
+    });
+    scrub.addEventListener("input", () => { f = +scrub.value; draw(); });
+    [runSel, refChk, follow].forEach((el) => el.addEventListener("change", () => { draw(); showVideo(); }));
+    refChk.addEventListener("change", () => { $("#pv-leg-ref").style.display = refChk.checked ? "" : "none"; });
+
+    function showVideo() {
+      if (view !== "video") return;
+      const src = Lc.videos && Lc.videos[runSel.value];
+      const box = $("#pv-video");
+      if (!src) {
+        box.innerHTML = `<p class="secondary pv-empty">No hay vídeo para esta configuración. Genéralo con
+          <code>python scripts/pferd_overlay.py --runs ${esc(runSel.value)}</code> y vuelve a ejecutar <code>scripts/pferd_report.py</code>.</p>`;
+        return;
+      }
+      const cur = box.querySelector("video");
+      if (cur && cur.dataset.src === src) return;
+      box.innerHTML = `<video controls loop muted playsinline data-src="${esc(src)}" src="${esc(src)}"></video>`;
+    }
+    $$("[data-pv]").forEach((b) => b.addEventListener("click", () => {
+      view = b.dataset.pv;
+      $$("[data-pv]").forEach((x) => x.classList.toggle("on", x === b));
+      $("#pv-3d").hidden = view !== "3d";
+      $("#pv-video").hidden = view !== "video";
+      $("#pv-transport").hidden = view !== "3d";
+      $("#pv-follow-l").hidden = view !== "3d";
+      $("#pv-ref-l").hidden = view !== "3d";
+      if (view === "video") { playing = false; play.textContent = "▶"; showVideo(); }
+      else $("#pv-video").querySelector("video")?.pause();
+    }));
+    resize(); draw(); requestAnimationFrame(loop);
+  }
+
+  document.addEventListener("click", (ev) => {
+    const g = ev.target.closest("[data-goto]");
+    if (g) showTab(g.dataset.goto);
+  });
 
   // arranque
   setTime(movs[0].t0 > 1 ? movs[0].t0 - 1 : 0);

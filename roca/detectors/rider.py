@@ -1,8 +1,9 @@
 """Detector del jinete: RTMPose (COCO-17) vía rtmlib.
 
 rtmlib descarga los modelos ONNX la primera vez. Backends:
-  - "opencv": cv2.dnn, funciona en cualquier Python con OpenCV (por defecto).
-  - "onnxruntime": más rápido; requiere `pip install onnxruntime` (no hay wheels para todas las versiones de Python).
+  - "onnxruntime" (por defecto): requiere onnxruntime (Python 3.10-3.12, ver requirements-video.txt).
+  - "opencv": cv2.dnn. Con OpenCV 5.0 falla en el detector YOLOX (error en la capa 'gather');
+    sólo sirve con OpenCV 4.x.
 """
 from __future__ import annotations
 
@@ -66,7 +67,7 @@ def _horse_height(kp, conf, min_conf):
 class RTMPoseRider:
     names = RIDER_KP
 
-    def __init__(self, mode: str = "balanced", backend: str = "opencv", device: str = "cpu", min_conf: float = 0.3):
+    def __init__(self, mode: str = "balanced", backend: str = "onnxruntime", device: str = "cpu", min_conf: float = 0.3):
         try:
             from rtmlib import Body
         except ImportError as e:  # pragma: no cover

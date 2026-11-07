@@ -724,6 +724,37 @@
 
   // ------------------------------------------------------------------ Calidad 3D
   const V = R.validation;
+  if (V && V.real) {
+    const rows = (o, unit, d) => Object.entries(o).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="n">${fmt(v, d)} ${unit}</td></tr>`).join("");
+    $("#pane-quality").innerHTML = `
+    <div class="section">
+      <h3>Calidad de la reconstrucción</h3>
+      <p class="secondary">Con vídeo real no hay una verdad de referencia: se mide la coherencia entre cámaras
+        (error de reproyección del punto 3D en cada vista) y cuánto del recorrido quedó cubierto por al menos dos cámaras.</p>
+      <div class="kpis">
+        <div class="kpi"><div class="v num">${fmt(V.reproj_px, 2)} px</div><div class="l">Error medio de reproyección</div></div>
+        <div class="kpi"><div class="v num">${fmt(V.p95_reproj_px, 2)} px</div><div class="l">Percentil 95</div></div>
+        <div class="kpi"><div class="v num">${fmt(V.raw_coverage_pct, 1)}%</div><div class="l">Cobertura (≥2 vistas)</div></div>
+        <div class="kpi"><div class="v num">${fmt(V.mean_views, 1)}</div><div class="l">Vistas medias por punto</div></div>
+      </div>
+      ${V.derived_points.length ? `<p class="secondary">Puntos estimados por geometría (el detector no los da): ${V.derived_points.map(esc).join(", ")}.</p>` : ""}
+    </div>
+    <div class="section grid2">
+      <div><h3>Por zona</h3><table><thead><tr><th>Zona</th><th class="n">Reproyección</th></tr></thead><tbody>${rows(V.group_reproj_px, "px", 2)}</tbody></table>
+        <table><thead><tr><th>Zona</th><th class="n">Cobertura</th></tr></thead><tbody>${rows(V.group_coverage_pct, "%", 1)}</tbody></table></div>
+      <div><h3>Cámaras</h3><table class="cam-table"><thead><tr><th>Cámara</th><th class="n">Puntos calib.</th><th class="n">RMSE calib.</th></tr></thead>
+        <tbody>${R.calibration.map((c) => `<tr><td>${esc(c.name)}</td><td class="n">${c.calib_points ?? "—"}</td><td class="n">${fmt(c.calib_rmse_px, 2)} px</td></tr>`).join("")}</tbody></table>
+        <table><thead><tr><th>Cámara</th><th class="n">Detecciones válidas</th></tr></thead><tbody>${rows(V.detection_rate_pct, "%", 1)}</tbody></table></div>
+    </div>
+    <div class="section">
+      <h3>Limitaciones de esta versión</h3>
+      <ul class="secondary">
+        <li>La precisión depende del detector de keypoints; SuperAnimal sin ajustar es aproximado en el caballo (sin menudillos, pecho aproximado).</li>
+        <li>Los umbrales de las reglas son provisionales y deben calibrarse con hojas de jueces reales.</li>
+        <li>No se evalúa la voz/chasquidos (necesita audio), la expresión, la boca, las orejas ni la cola.</li>
+      </ul>
+    </div>`;
+  } else {
   $("#pane-quality").innerHTML = `
     <div class="section">
       <h3>Precisión de la reconstrucción</h3>
@@ -758,6 +789,7 @@
         <li>La posición de la nuca se penaliza por regla explícita, no se aprende de las notas de los jueces (la literatura muestra que estas premian la hiperflexión).</li>
       </ul>
     </div>`;
+  }
 
   // arranque
   setTime(movs[0].t0 > 1 ? movs[0].t0 - 1 : 0);

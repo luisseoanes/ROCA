@@ -1,0 +1,17 @@
+{
+  "_nota": "Plantilla. Sustituir cada <...> por el nombre exacto que imprime 'pferd_to_dlc.py inspect' (campo labels). null = sin equivalente. Borrar esta clave _nota antes de usarlo.",
+  "nose": "<label>",
+  "eye": {"mean": ["<label ojo izq>", "<label ojo der>"]},
+  "poll": "<label>",
+  "throat": "<label>",
+  "withers": "<label>",
+  "chest": "<label>",
+  "mid_back": "<label>",
+  "croup": "<label>",
+  "tail_base": "<label>",
+  "tail_tip": null,
+  "LF_shoulder": "<label>", "LF_knee": "<label>", "LF_fetlock": "<label>", "LF_hoof": "<label>",
+  "RF_shoulder": "<label>", "RF_knee": "<label>", "RF_fetlock": "<label>", "RF_hoof": "<label>",
+  "LH_hip": "<label>", "LH_hock": "<label>", "LH_fetlock": "<label>", "LH_hoof": "<label>",
+  "RH_hip": "<label>", "RH_hock": "<label>", "RH_fetlock": "<label>", "RH_hoof": "<label>"
+}

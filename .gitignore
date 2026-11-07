@@ -10,3 +10,5 @@ venv/
 
 # Archivo único generado para enviar (python scripts/build_standalone.py)
 dist/
+
+.DS_Store

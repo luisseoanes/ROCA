@@ -1,0 +1,7 @@
+# Pipeline con vídeo real (además de requirements.txt). Probado con Python 3.15.
+-r requirements.txt
+opencv-contrib-python>=4.9   # vídeo, ChArUco (calibración intrínseca), corrección de distorsión
+rtmlib>=0.0.16               # RTMPose (jinete); backend "opencv" por defecto
+tqdm                         # dependencia de rtmlib no declarada
+# Opcional, más rápido para RTMPose (backend "onnxruntime"); no hay wheels para Python 3.15:
+# onnxruntime

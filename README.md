@@ -30,6 +30,45 @@ python scripts/build_standalone.py   # genera dist/ROCA.html (~4 MB)
 
 Opciones: `--profile ideal` (ejecución de referencia, todo 9), `--cams 4..8`, `--seed N`.
 
+## Vídeo real
+
+El mismo pipeline acepta vídeos reales: sólo cambia el origen de las detecciones 2D.
+
+```bash
+pip install -r requirements-video.txt            # OpenCV + RTMPose (jinete)
+# Caballo (DeepLabCut, Python 3.10-3.12, entorno aparte): pip install -r requirements-dlc.txt
+
+# 1. Calibración intrínseca, una vez por cámara y óptica
+python scripts/make_charuco.py --out charuco.png  # imprimir al 100% y medir
+python scripts/calibrate_intrinsics.py --video cam1_tablero.mp4 --name CAM1 \
+    --square-m 0.08 --marker-m 0.06 --out sesion/calib/cam1_intr.json
+
+# 2. Calibración extrínseca con las letras, cada vez que se montan las cámaras
+python scripts/calibrate_extrinsics.py --intrinsics sesion/calib/cam1_intr.json \
+    --frame-from sesion/videos/cam1.mp4 --click --out sesion/calib/cam1.json
+
+# 3. Sesión: describir cámaras, vídeos, sincronización y detectores (ver roca/session.py)
+python scripts/run_video.py sesion/session.json --solo-3d       # reconstrucción y caché de detecciones
+python scripts/preview_detections.py sesion/session.json --camera CAM1 --out cam1_preview.mp4
+python scripts/run_video.py sesion/session.json                 # análisis, nota e informe web
+```
+
+Detectores: **jinete** RTMPose (COCO-17, vía rtmlib; funciona sin onnxruntime con el backend
+`opencv`); **caballo** DeepLabCut SuperAnimal-Quadruped sin reentrenar (`"type": "superanimal"`;
+no tiene menudillos, que se estiman por geometría, y el pecho es aproximado) o un modelo propio
+con los 26 puntos de ROCA (`"type": "dlc_project"`) entrenado con PFERD y frames propios:
+
+```bash
+python training/pferd_to_dlc.py inspect --dataset /ruta/PFERD/dataset
+python training/pferd_to_dlc.py convert --dataset /ruta/PFERD/dataset --mapping mapping.json --out pferd_dlc/labeled-data
+python training/train_horse.py --project-dir modelos --labeled pferd_dlc/labeled-data
+```
+
+PFERD es CC BY-NC-SA (uso no comercial): revisar la licencia antes de usarlo en producto.
+
+Sincronización: por hardware (genlock/timecode → `"offset_frames"` por cámara) o con un flash
+visible por todas las cámaras al inicio (`"sync": {"method": "flash"}`).
+
 ## Estructura
 
 | Ruta | Qué hace |
@@ -45,7 +84,12 @@ Opciones: `--profile ideal` (ejecución de referencia, todo 9), `--cams 4..8`, `
 | `roca/scoring.py` | Notas 0-10 por reglas trazables (Anexo I, coeficientes, *firewall* FEI, Art. 19) |
 | `roca/advice.py` | Oportunidades de mejora ordenadas por puntos recuperables + ejercicios de entrenamiento |
 | `roca/synth.py` | Generador sintético: cinemática, rig de cámaras y detecciones 2D simuladas |
-| `roca/pipeline.py` | Orquestación; `triangulate_session` es el mismo código para vídeo real |
+| `roca/pipeline.py` | Orquestación del PoC; `triangulate_session` es el mismo código para vídeo real |
+| `roca/video.py` | Lectura de vídeo (OpenCV) y sincronización por flash |
+| `roca/calibration.py` | Calibración intrínseca ChArUco, corrección de distorsión, extrínseca con letras, E/S de cámaras |
+| `roca/detectors/` | RTMPose (jinete), DeepLabCut SuperAnimal / modelo propio (caballo), traducción de esqueletos |
+| `roca/session.py` | Pipeline con vídeo real: `session.json` → detecciones (con caché) → 3D → nota |
+| `training/` | Conversión PFERD → DeepLabCut y entrenamiento del detector del caballo |
 | `roca/report.py` | Exporta `web/data/report.js` y `motion.js` |
 | `web/` | Front: visor Three.js, hoja de puntuación, mejoras, análisis, calidad 3D |
 | `docs/ARQUITECTURA.md` | Diseño del sistema real, hardware y hoja de ruta |
